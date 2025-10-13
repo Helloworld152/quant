@@ -1,5 +1,5 @@
 pandas
 akshare
-backtrader
+backtrader2
 matplotlib
 apscheduler

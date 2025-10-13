@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.dist-info/
+.eggs/
+.cache/
+.pytest_cache/
+.mypy_cache/
+pip-wheel-metadata/
+
+# Environments
+.env
+.venv
+venv/
+env/
+*.env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE/Editor
+.vscode/
+.idea/
+*.iml
+
+# Logs & Coverage
+*.log
+.coverage
+coverage.xml
+htmlcov/
+
+# C/C++ Build
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+*.o
+*.obj
+*.exe
+*.dll
+*.pdb
+*.lib
+*.a
+*.dylib
+
+# Rust
+target/
+
+# Results (keep symbols.csv tracked)
+*.csv
+!symbols.csv
+
+# Misc
+nohup.out
+

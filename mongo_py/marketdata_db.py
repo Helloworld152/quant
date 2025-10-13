@@ -78,6 +78,23 @@ class MarketDataDB:
             cursor = cursor.limit(limit)
         return list(cursor)
 
+    def delete_data(self, collection_name, symbol=None, start=None, end=None):
+        """
+        删除数据：可按 symbol 与时间范围过滤；返回删除条数
+        """
+        collection = self.db[collection_name]
+        query = {}
+        if symbol:
+            query['symbol'] = symbol
+        if start or end:
+            query['datetime'] = {}
+            if start:
+                query['datetime']['$gte'] = pd.to_datetime(start).to_pydatetime()
+            if end:
+                query['datetime']['$lte'] = pd.to_datetime(end).to_pydatetime()
+        result = collection.delete_many(query)
+        return result.deleted_count
+
 # --------------------------
 # 测试示例
 # --------------------------

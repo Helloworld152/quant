@@ -1,20 +1,28 @@
+import os
+import pandas as pd
+from typing import List, Sequence, Tuple, Dict, Any
+
 from strategies import DualMovingAverageStrategy
 from backtest import run_backtest
-import pandas as pd
-import os
 
 
-if __name__ == '__main__':
-    # 标的清单文件（用户可新增），字段: symbol, tested(0/1), last_run(可选)
-    symbols_file = 'symbols.csv'
-    # 回测模式：'pending' 仅回测未标记，'all' 回测全部
-    mode = 'all'
-    start_date = '20200101'
-    end_date = '20250901'
-
-    fast_list = [5, 10, 20]
-    slow_list = [30, 50, 100]
-
+def run_ma_grid_batch(
+    symbols_file: str,
+    mode: str,
+    start_date: str,
+    end_date: str,
+    fast_list: Sequence[int],
+    slow_list: Sequence[int],
+    initial_cash: float = 100000.0,
+    commission: float = 0.001,
+    cheat_on_close: bool = True,
+    out_csv: str = 'ma_grid_results.csv',
+) -> pd.DataFrame:
+    """
+    批量执行双均线参数网格回测：从 symbols.csv 读取标的，按 mode 选择批次，结果写入 CSV。
+    mode='pending' 仅回测未标记；mode='all' 全量回测。
+    返回中文列 DataFrame（已排序、两位小数未四舍五入，建议外部打印时 round(2)）。
+    """
     # 读取/初始化 symbol 文件
     if os.path.exists(symbols_file):
         sym_df = pd.read_csv(symbols_file, dtype={'symbol': str})
@@ -22,20 +30,19 @@ if __name__ == '__main__':
             sym_df['tested'] = 0
         sym_df['tested'] = sym_df['tested'].fillna(0).astype(int)
     else:
-        # 若文件不存在，可在此初始化示例；用户后续可直接编辑此文件新增股票
-        init_symbols = ['000001']
-        sym_df = pd.DataFrame({'symbol': init_symbols, 'tested': 0})
+        sym_df = pd.DataFrame({'symbol': [], 'tested': []})
         sym_df.to_csv(symbols_file, index=False, encoding='utf-8-sig')
 
     if mode == 'all':
         batch_symbols = sym_df['symbol'].astype(str).tolist()
     else:
         batch_symbols = [s for s, t in zip(sym_df['symbol'].astype(str), sym_df['tested']) if int(t) != 1]
-    if not batch_symbols:
-        print('无待回测标的（symbols.csv 全部已标记）。可在文件追加新股票。')
-        raise SystemExit(0)
 
-    records = []
+    if not batch_symbols:
+        print('无待回测标的（symbols.csv 可追加新股票）。')
+        return pd.DataFrame()
+
+    records: List[Dict[str, Any]] = []
     strategy_name = DualMovingAverageStrategy.__name__
     for sym in batch_symbols:
         for fast in fast_list:
@@ -48,9 +55,9 @@ if __name__ == '__main__':
                     end_date=end_date,
                     strategy_cls=DualMovingAverageStrategy,
                     strategy_params=dict(fast=fast, slow=slow, printlog=False),
-                    initial_cash=100000.0,
-                    commission=0.001,
-                    cheat_on_close=True,
+                    initial_cash=initial_cash,
+                    commission=commission,
+                    cheat_on_close=cheat_on_close,
                     add_analyzers=True,
                     verbose=False,
                 )
@@ -90,12 +97,14 @@ if __name__ == '__main__':
         sym_df.to_csv(symbols_file, index=False, encoding='utf-8-sig')
 
     df = pd.DataFrame.from_records(records)
-    # 先计算累计收益，再排序：symbol 升序，累计收益 降序
-    init_cash = 100000.0
+    if df.empty:
+        return df
+
+    init_cash = initial_cash
     df['__cum_return'] = df['final_value'].apply(lambda v: (v / init_cash - 1) * 100 if isinstance(v, (int, float)) else None)
     df = df.sort_values(['symbol', '__cum_return'], ascending=[True, False])
 
-    # 中文列名与百分比展示（累计收益用期末/初始计算）
+    # 中文列名
     df['累计收益(%)'] = df['__cum_return']
     df['年化收益(%)'] = df['rnorm100']
     df['胜率(%)'] = df['win_rate']
@@ -120,12 +129,13 @@ if __name__ == '__main__':
     cols_order = ['标的', '策略', '开始日期', '结束日期', '短期均线', '长期均线', '期末资金', '夏普比率', '最大回撤(%)', '最大回撤金额', '累计收益(%)', '年化收益(%)', '交易笔数', '胜率(%)']
     df_cn = df_cn.reindex(columns=[c for c in cols_order if c in df_cn.columns])
 
-    print(df_cn.round(2).head(10))
-    out_path = 'ma_grid_results.csv'
+    # 输出 CSV
     if mode == 'all':
-        df_cn.to_csv(out_path, mode='w', header=True, index=False, encoding='utf-8-sig', float_format='%.2f')
-        print(f"已覆盖保存: {out_path}")
+        df_cn.to_csv(out_csv, mode='w', header=True, index=False, encoding='utf-8-sig', float_format='%.2f')
     else:
-        header_needed = not os.path.exists(out_path)
-        df_cn.to_csv(out_path, mode='a', header=header_needed, index=False, encoding='utf-8-sig', float_format='%.2f')
-        print(f"已追加保存: {out_path}")
+        header_needed = not os.path.exists(out_csv)
+        df_cn.to_csv(out_csv, mode='a', header=header_needed, index=False, encoding='utf-8-sig', float_format='%.2f')
+
+    return df_cn
+
+

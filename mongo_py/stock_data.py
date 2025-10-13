@@ -99,3 +99,42 @@ if __name__ == "__main__":
     monthly_df = get_stock_monthly_data(symbol, start_date, end_date)
     print("monthly_kline:", monthly_df.shape)
     print(monthly_df.head(3))
+
+
+def delete_stock_data(symbol: str, start_date: str = None, end_date: str = None, period: str = "daily") -> int:
+    """
+    删除某标的在指定周期与时间范围内的数据；返回删除条数。
+    period: daily/weekly/monthly
+    """
+    collection_map = {
+        'daily': 'daily_kline',
+        'weekly': 'weekly_kline',
+        'monthly': 'monthly_kline',
+    }
+    collection = collection_map.get(period)
+    if not collection:
+        raise ValueError(f"unsupported period: {period}")
+    db = MarketDataDB()
+    return db.delete_data(collection, symbol=symbol, start=start_date, end=end_date)
+
+
+def refresh_stock_data(symbols, start_date: str, end_date: str, period: str = "daily") -> None:
+    """
+    对一个 symbol 或 symbol 列表：先删除指定区间数据，再从数据源重拉并入库。
+    """
+    if isinstance(symbols, (str,)):
+        symbols = [symbols]
+    db = MarketDataDB()
+    collection_map = {
+        'daily': 'daily_kline',
+        'weekly': 'weekly_kline',
+        'monthly': 'monthly_kline',
+    }
+    collection = collection_map.get(period)
+    if not collection:
+        raise ValueError(f"unsupported period: {period}")
+    for sym in symbols:
+        # 先删除
+        db.delete_data(collection, symbol=sym, start=start_date, end=end_date)
+        # 再重拉
+        _fetch_and_insert_range(db, collection, sym, pd.to_datetime(start_date), pd.to_datetime(end_date), period)
