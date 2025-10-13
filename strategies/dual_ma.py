@@ -3,8 +3,8 @@ import backtrader as bt
 
 class DualMovingAverageStrategy(bt.Strategy):
     params = dict(
-        fast=10,
-        slow=30,
+        fast=5,
+        slow=20,
         printlog=False,
     )
 
