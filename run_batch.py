@@ -3,7 +3,7 @@ from backtest import run_ma_grid_batch
 
 if __name__ == '__main__':
     symbols_file = 'symbols.csv'
-    mode = 'all'  # 'pending' 仅未回测，'all' 全量重测
+    mode = 'pending'  # 'pending' 仅未回测，'all' 全量重测
     start_date = '20200101'
     end_date = '20250901'
     fast_list = [5, 10, 20]
