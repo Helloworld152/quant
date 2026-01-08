@@ -57,8 +57,10 @@ target/
 
 # Results (keep symbols.csv tracked)
 *.csv
-!symbols.csv
 
 # Misc
 nohup.out
 
+# log
+trade_log/
+trade_reports/
