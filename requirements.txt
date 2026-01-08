@@ -5,3 +5,5 @@ matplotlib
 apscheduler
 openpyxl
 pillow
+polars
+pyarrow
