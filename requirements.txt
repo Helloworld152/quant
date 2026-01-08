@@ -1,9 +1,4 @@
 pandas
 akshare
-backtrader2
-matplotlib
-apscheduler
-openpyxl
-pillow
 polars
 pyarrow

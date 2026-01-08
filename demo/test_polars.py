@@ -101,4 +101,5 @@ if __name__ == "__main__":
         print(df)
         
         # 还可以直接转为 Parquet 存盘，速度极快
-        # df.write_parquet("kline_data.parquet")
+        df.write_parquet("kline_data.parquet")
+        df.write_csv("kline_data.csv")
